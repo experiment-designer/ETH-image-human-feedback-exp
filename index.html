@@ -8,11 +8,8 @@
 </head>
 <body>
     <script>
-        // Check password verification and consent
-        if (!sessionStorage.getItem('passwordVerified')) {
-            alert("Access denied. Please start from the consent page.");
-            window.location.href = 'ethics_consent.html';
-        } else if (!sessionStorage.getItem('userConsented')) {
+        // Check password verification and consent - redirect silently if not authenticated
+        if (!sessionStorage.getItem('passwordVerified') || !sessionStorage.getItem('userConsented')) {
             window.location.href = 'ethics_consent.html';
         }
     </script>
