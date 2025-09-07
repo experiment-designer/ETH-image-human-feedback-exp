@@ -22,7 +22,8 @@ const feedbackForm = document.getElementById('feedback-form');
 const progressElement = document.getElementById('progress');
 // Removed userPromptInput reference
 // Determine the number of policies dynamically by counting radio buttons
-const policyRadioButtons = feedbackForm.elements['policy_preference'];
+// Convert the RadioNodeList to a standard array to ensure iteration works in all browsers
+const policyRadioButtons = Array.from(document.querySelectorAll('input[name="policy_preference"]'));
 const numPolicies = policyRadioButtons.length;
 console.log(`Detected ${numPolicies} policies.`);
 
@@ -240,40 +241,20 @@ document.addEventListener('keydown', (event) => {
         const selectedPolicy = parseInt(key, 10);
 
         if (selectedPolicy >= 1 && selectedPolicy <= numPolicies) {
-            // Find the corresponding radio button by iterating
-            let radioToCheck = null;
-            console.log(`Searching for radio button with value: "${String(selectedPolicy)}"`); // Log target value
-            for (const radio of policyRadioButtons) {
-                console.log(`  Checking radio button value: "${radio.value}" (type: ${typeof radio.value})`); // Log current radio value and type
-                if (radio.value === String(selectedPolicy)) {
-                    console.log(`  Match found!`); // Log match
-                    radioToCheck = radio;
-                    break;
-                }
-            }
+            const radioToCheck = policyRadioButtons.find(radio => radio.value === String(selectedPolicy));
 
             if (radioToCheck) {
-                console.log(`Key ${selectedPolicy} pressed, selecting Policy ${selectedPolicy}`);
-                // Select the radio button
                 radioToCheck.checked = true;
-                // Call saveFeedback directly after checking the button
                 saveFeedback();
 
-                // Move to the next image if not the last one
                 if (currentQuestionIndex < displayOrder.length - 1) {
-                    console.log("Moving to next question...");
                     currentQuestionIndex++;
                     updateImage();
                 } else {
-                    // If it was the last image, simulate finish button click
-                    console.log("Key pressed on last image. Finishing...");
-                    finishButton.click(); // Trigger the finish button's action
+                    finishButton.click();
                 }
-                // Prevent default browser action for the number key (e.g., scrolling)
+
                 event.preventDefault();
-            } else {
-                // Log if no matching radio button was found after the loop
-                console.log(`  No radio button found with value "${String(selectedPolicy)}".`);
             }
         }
     } else if (key === 'ArrowLeft') {
