@@ -4,9 +4,8 @@ const styleDescriptionInput = document.getElementById('style-description-input')
 const submitButton = document.getElementById('submit-button');
 const saveStatus = document.getElementById('save-status');
 
-// Endpoint for automatic submission.
-// Replace YOUR_FORM_ID with the ID from your Formspree form.
-const SUBMIT_ENDPOINT = 'https://formspree.io/f/YOUR_FORM_ID';
+// Endpoint for automatic submission using Formspree.
+const SUBMIT_ENDPOINT = 'https://formspree.io/f/xpwjklwz';
 
 function buildOutputData() {
     const feedbackData = JSON.parse(localStorage.getItem('imageFeedback')) || {};
