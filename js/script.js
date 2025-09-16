@@ -60,7 +60,8 @@ const feedbackForm = document.getElementById('feedback-form');
 const progressElement = document.getElementById('progress');
 // Removed userPromptInput reference
 // Determine the number of policies dynamically by counting radio buttons
-const policyRadioButtons = feedbackForm.elements['policy_preference'];
+const policyRadioNodeList = feedbackForm.elements['policy_preference'];
+const policyRadioButtons = Array.from(policyRadioNodeList);
 const numPolicies = policyRadioButtons.length;
 console.log(`Detected ${numPolicies} policies.`);
 
@@ -193,25 +194,49 @@ function updateImage() {
     }
 }
 
-function saveFeedback() {
-    if (currentQuestionIndex >= displayOrder.length) return; // Safety check
+function recordFeedback(selectedValueOverride) {
+    if (currentQuestionIndex >= displayOrder.length) return false; // Safety check
 
     const currentImageData = displayOrder[currentQuestionIndex];
     const filenameKey = currentImageData.filename; // Use the original filename as the key
-    const selectedValue = feedbackForm.elements['policy_preference'].value;
 
-    if (selectedValue) {
-        feedbackData[filenameKey] = parseInt(selectedValue, 10);
-        localStorage.setItem(feedbackStorageKey, JSON.stringify(feedbackData));
-        console.log(`Saved feedback for ${filenameKey}: ${feedbackData[filenameKey]}`);
-    } else {
-        // Optional: Clear feedback if nothing is selected
-        // delete feedbackData[filenameKey];
-        // localStorage.setItem(feedbackStorageKey, JSON.stringify(feedbackData));
-        // If you want to explicitly save 'null' or 'undefined' when nothing is chosen:
-        // delete feedbackData[currentImageFile];
-        // localStorage.setItem(feedbackStorageKey, JSON.stringify(feedbackData));
+    let selectedValue = selectedValueOverride;
+    if (selectedValue === undefined || selectedValue === null || selectedValue === '') {
+        selectedValue = policyRadioNodeList.value;
     }
+
+    if (selectedValue === undefined || selectedValue === null || selectedValue === '') {
+        return false;
+    }
+
+    const parsedValue = parseInt(selectedValue, 10);
+    if (Number.isNaN(parsedValue)) {
+        console.warn('Unable to record feedback: invalid value provided', selectedValue);
+        return false;
+    }
+
+    feedbackData[filenameKey] = parsedValue;
+    localStorage.setItem(feedbackStorageKey, JSON.stringify(feedbackData));
+    console.log(`Saved feedback for ${filenameKey}: ${feedbackData[filenameKey]}`);
+    return true;
+}
+
+function saveFeedback(event) {
+    let overrideValue;
+    if (event && event.target && event.target.name === 'policy_preference') {
+        overrideValue = event.target.value;
+    }
+    recordFeedback(overrideValue);
+}
+
+function advanceToNextQuestion() {
+    if (currentQuestionIndex < displayOrder.length - 1) {
+        currentQuestionIndex++;
+        updateImage();
+        return true;
+    }
+
+    return false;
 }
 
 function loadFeedback() {
@@ -239,24 +264,23 @@ function loadFeedback() {
 
 prevButton.addEventListener('click', () => {
     if (currentQuestionIndex > 0) {
-        saveFeedback(); // Save feedback for the image we are leaving
+        recordFeedback(); // Save feedback for the image we are leaving
         currentQuestionIndex--;
         updateImage();
     }
 });
 
 nextButton.addEventListener('click', () => {
-    saveFeedback(); // Save feedback for the current image before moving
-    if (currentQuestionIndex < displayOrder.length - 1) {
-        currentQuestionIndex++;
-        updateImage();
+    recordFeedback(); // Save feedback for the current image before moving
+    if (!advanceToNextQuestion()) {
+        console.log('Next button pressed on last question, finishing...');
+        finishButton.click();
     }
-    // Finish button handles the last image case
 });
 
 // --- Finish Button Listener ---
 finishButton.addEventListener('click', () => {
-    saveFeedback(); // Save feedback for the last image
+    recordFeedback(); // Save feedback for the last image
     console.log("Finish button clicked. Redirecting to prompt page.");
     const queryString = window.location.search;
     window.location.href = queryString ? `prompt.html${queryString}` : 'prompt.html';
@@ -296,16 +320,11 @@ document.addEventListener('keydown', (event) => {
                 console.log(`Key ${selectedPolicy} pressed, selecting Policy ${selectedPolicy}`);
                 // Select the radio button
                 radioToCheck.checked = true;
-                // Call saveFeedback directly after checking the button
-                saveFeedback();
+                // Persist the selection using the known value
+                recordFeedback(radioToCheck.value);
 
-                // Move to the next image if not the last one
-                if (currentQuestionIndex < displayOrder.length - 1) {
-                    console.log("Moving to next question...");
-                    currentQuestionIndex++;
-                    updateImage();
-                } else {
-                    // If it was the last image, simulate finish button click
+                // Move to the next image or finish if this was the last one
+                if (!advanceToNextQuestion()) {
                     console.log("Key pressed on last image. Finishing...");
                     finishButton.click(); // Trigger the finish button's action
                 }
