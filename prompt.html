@@ -65,11 +65,29 @@
             }
         })();
 
-        // Check password verification
-        if (!sessionStorage.getItem('passwordVerified')) {
-            alert("Access denied. Please start from the consent page.");
-            const queryString = window.location.search;
-            window.location.href = queryString ? `ethics_consent.html${queryString}` : 'ethics_consent.html';
+        const promptUrl = new URL(window.location.href);
+        const isQuickMode = promptUrl.searchParams.has('quick');
+
+        if (isQuickMode) {
+            try {
+                sessionStorage.setItem('passwordVerified', 'true');
+                sessionStorage.setItem('userConsented', 'true');
+            } catch (err) {
+                console.warn('Quick mode could not prime sessionStorage on prompt page:', err);
+            }
+        } else {
+            let passwordVerified = false;
+            try {
+                passwordVerified = sessionStorage.getItem('passwordVerified') === 'true';
+            } catch (err) {
+                console.warn('Unable to read password verification flag from sessionStorage on prompt page:', err);
+            }
+
+            if (!passwordVerified) {
+                alert("Access denied. Please start from the consent page.");
+                const queryString = window.location.search;
+                window.location.href = queryString ? `ethics_consent.html${queryString}` : 'ethics_consent.html';
+            }
         }
     </script>
     <div id="prompt-entry-container">

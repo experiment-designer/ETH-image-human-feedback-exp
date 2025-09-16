@@ -68,6 +68,19 @@
                 window.history.replaceState(null, '', url.toString());
             }
         })();
+
+        const consentUrl = new URL(window.location.href);
+        if (consentUrl.searchParams.has('quick')) {
+            try {
+                sessionStorage.setItem('passwordVerified', 'true');
+                sessionStorage.setItem('userConsented', 'true');
+            } catch (err) {
+                console.warn('Quick mode could not prime sessionStorage on consent page:', err);
+            }
+
+            const queryString = window.location.search;
+            window.location.replace(queryString ? `index.html${queryString}` : 'index.html');
+        }
     </script>
     <div id="consent-container">
         <h2>Participant Information and Consent</h2>

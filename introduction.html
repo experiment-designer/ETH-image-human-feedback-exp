@@ -71,11 +71,33 @@
             }
         })();
 
-        // Check password verification
-        if (!sessionStorage.getItem('passwordVerified')) {
-            alert("Access denied. Please start from the consent page.");
+        const introUrl = new URL(window.location.href);
+        const isQuickMode = introUrl.searchParams.has('quick');
+
+        if (isQuickMode) {
+            try {
+                sessionStorage.setItem('passwordVerified', 'true');
+                sessionStorage.setItem('userConsented', 'true');
+            } catch (err) {
+                console.warn('Quick mode could not prime sessionStorage on introduction page:', err);
+            }
+
             const queryString = window.location.search;
-            window.location.href = queryString ? `ethics_consent.html${queryString}` : 'ethics_consent.html';
+            window.location.replace(queryString ? `index.html${queryString}` : 'index.html');
+        } else {
+            let passwordVerified = false;
+            try {
+                passwordVerified = sessionStorage.getItem('passwordVerified') === 'true';
+            } catch (err) {
+                console.warn('Unable to read password verification flag from sessionStorage:', err);
+            }
+
+            // Check password verification
+            if (!passwordVerified) {
+                alert("Access denied. Please start from the consent page.");
+                const queryString = window.location.search;
+                window.location.href = queryString ? `ethics_consent.html${queryString}` : 'ethics_consent.html';
+            }
         }
     </script>
     <!-- Title removed, using h2 inside container -->

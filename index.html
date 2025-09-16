@@ -26,8 +26,55 @@
             }
         })();
 
-        // Check password verification and consent - redirect silently if not authenticated
-        if (!sessionStorage.getItem('passwordVerified') || !sessionStorage.getItem('userConsented')) {
+        const currentUrl = new URL(window.location.href);
+        const isQuickMode = currentUrl.searchParams.has('quick');
+
+        if (isQuickMode) {
+            let quickInitialized = false;
+            try {
+                sessionStorage.setItem('passwordVerified', 'true');
+                sessionStorage.setItem('userConsented', 'true');
+                quickInitialized = sessionStorage.getItem('quickModeInitialized') === 'true';
+            } catch (err) {
+                console.warn('Quick mode could not access sessionStorage:', err);
+            }
+
+            if (!quickInitialized) {
+                try {
+                    const keysToClear = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (!key) continue;
+                        if (key === 'imageFeedback' || key === 'benchmarkEpisodeKeys' || key === 'currentLambda') {
+                            keysToClear.push(key);
+                        } else if (key === 'imageFeedback_backup' || key.startsWith('imageFeedback_') || key.startsWith('benchmarkEpisodeKeys_')) {
+                            keysToClear.push(key);
+                        }
+                    }
+                    keysToClear.forEach(key => localStorage.removeItem(key));
+                } catch (err) {
+                    console.warn('Quick mode could not reset stored questionnaire data:', err);
+                }
+
+                try {
+                    sessionStorage.setItem('quickModeInitialized', 'true');
+                } catch (err) {
+                    console.warn('Quick mode could not mark initialization in sessionStorage:', err);
+                }
+            }
+        }
+
+        let passwordVerified = false;
+        let userConsented = false;
+        try {
+            passwordVerified = sessionStorage.getItem('passwordVerified') === 'true';
+            userConsented = sessionStorage.getItem('userConsented') === 'true';
+        } catch (err) {
+            console.warn('Unable to read authentication flags from sessionStorage:', err);
+        }
+
+        // Check password verification and consent - redirect silently if not authenticated unless quick mode is active
+        if (!isQuickMode && (!passwordVerified || !userConsented)) {
             const queryString = window.location.search;
             const target = queryString ? `ethics_consent.html${queryString}` : 'ethics_consent.html';
             window.location.replace(target);
