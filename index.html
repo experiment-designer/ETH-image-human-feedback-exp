@@ -9,7 +9,7 @@
 <body>
     <script>
         (function enforceLambdaParam() {
-            const defaultLam = '0.1';
+            const defaultLam = '0.01';
             const url = new URL(window.location.href);
             if (!url.searchParams.has('lam')) {
                 const lamValue = url.searchParams.get('lambda') || defaultLam;

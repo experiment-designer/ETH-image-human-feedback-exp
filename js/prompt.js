@@ -10,7 +10,35 @@ const feedbackJsonInput = document.getElementById('feedback-json-input');
 const urlParams = new URLSearchParams(window.location.search);
 const urlLambda = urlParams.get('lam') || urlParams.get('lambda');
 const storedLambda = localStorage.getItem('currentLambda');
-const selectedLambda = urlLambda || storedLambda || '0.1';
+const selectedLambda = urlLambda || storedLambda || '0.01';
+const annotatorParamKeys = ['annotator', 'annotator_id', 'participant', 'user', 'uid'];
+let annotatorId = null;
+
+for (const key of annotatorParamKeys) {
+    const value = urlParams.get(key);
+    if (value && value.trim()) {
+        annotatorId = value.trim();
+        break;
+    }
+}
+
+if (!annotatorId) {
+    try {
+        annotatorId = sessionStorage.getItem('annotatorId') || localStorage.getItem('annotatorId');
+    } catch (err) {
+        console.warn('Unable to read stored annotator id:', err);
+        annotatorId = null;
+    }
+}
+
+if (annotatorId) {
+    try {
+        sessionStorage.setItem('annotatorId', annotatorId);
+        localStorage.setItem('annotatorId', annotatorId);
+    } catch (err) {
+        console.warn('Unable to persist annotator id:', err);
+    }
+}
 console.log(`Preparing prompt page for lambda=${selectedLambda}.`);
 
 try {
@@ -83,7 +111,7 @@ function loadBenchmarkKeys() {
     return [];
 }
 
-function buildOutputData(feedbackData, styleDescription) {
+function buildOutputData(feedbackData, styleDescription, annotatorIdValue) {
     const formattedPreferences = [];
     const filenamePattern = /alg-([a-zA-Z0-9]+)_episode_(\d+)_timestep_(\d+)\.png$/i;
 
@@ -112,14 +140,24 @@ function buildOutputData(feedbackData, styleDescription) {
     });
 
     const benchmarkEpisodeKeys = loadBenchmarkKeys();
-
-    return {
-        lambda: selectedLambda,
-        style_description: styleDescription,
-        preferences: formattedPreferences,
-        benchmark_episode_keys: benchmarkEpisodeKeys,
+    const lambdaNumber = Number(selectedLambda);
+    const metadata = {
+        lambda: Number.isFinite(lambdaNumber) ? lambdaNumber : selectedLambda,
         responses_recorded: formattedPreferences.length
     };
+
+    const output = {
+        preferences: formattedPreferences,
+        benchmark_episode_keys: benchmarkEpisodeKeys,
+        metadata,
+        style_description: styleDescription
+    };
+
+    if (annotatorIdValue) {
+        output.annotator_id = annotatorIdValue;
+    }
+
+    return output;
 }
 
 promptForm?.addEventListener('submit', async (event) => {
@@ -145,7 +183,7 @@ promptForm?.addEventListener('submit', async (event) => {
         }
     }
 
-    const outputData = buildOutputData(feedbackData, styleDescription);
+    const outputData = buildOutputData(feedbackData, styleDescription, annotatorId);
     const feedbackJson = JSON.stringify(outputData, null, 2);
 
     if (feedbackJsonInput) {
@@ -159,6 +197,9 @@ promptForm?.addEventListener('submit', async (event) => {
     formData.set('style_description', styleDescription);
     formData.set('lambda', selectedLambda);
     formData.set('feedback_json', feedbackJson);
+    if (annotatorId) {
+        formData.set('annotator_id', annotatorId);
+    }
 
     if (formStatus) {
         formStatus.style.display = 'block';
