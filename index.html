@@ -9,20 +9,56 @@
 <body>
     <script>
         (function enforceLambdaParam() {
-            const defaultLam = '0.01';
+            const supportedLambdas = ['0.1', '0.01'];
             const url = new URL(window.location.href);
-            if (!url.searchParams.has('lam')) {
-                const lamValue = url.searchParams.get('lambda') || defaultLam;
-                url.searchParams.set('lam', lamValue);
-                if (url.searchParams.has('lambda')) {
+            const lamParam = url.searchParams.get('lam');
+            const legacyLam = url.searchParams.get('lambda');
+
+            const isSupported = value => value && supportedLambdas.includes(value);
+
+            let lamToUse = isSupported(lamParam) ? lamParam : null;
+            if (!lamToUse && isSupported(legacyLam)) {
+                lamToUse = legacyLam;
+            }
+
+            if (!lamToUse) {
+                let stored = null;
+                try {
+                    stored = localStorage.getItem('currentLambda');
+                } catch (err) {
+                    console.warn('Unable to read stored lambda:', err);
+                }
+                if (!isSupported(stored)) {
+                    lamToUse = supportedLambdas[Math.random() < 0.5 ? 0 : 1];
+                } else {
+                    lamToUse = stored;
+                }
+                try {
+                    localStorage.setItem('currentLambda', lamToUse);
+                } catch (err) {
+                    console.warn('Unable to store chosen lambda:', err);
+                }
+            }
+
+            const shouldRedirect = !lamParam || lamParam !== lamToUse || legacyLam !== null;
+            if (shouldRedirect) {
+                url.searchParams.set('lam', lamToUse);
+                if (legacyLam !== null) {
                     url.searchParams.delete('lambda');
                 }
                 window.location.replace(url.toString());
                 return;
             }
-            if (url.searchParams.has('lambda')) {
+
+            if (legacyLam !== null) {
                 url.searchParams.delete('lambda');
                 window.history.replaceState(null, '', url.toString());
+            }
+
+            try {
+                localStorage.setItem('currentLambda', lamToUse);
+            } catch (err) {
+                console.warn('Unable to persist lambda selection:', err);
             }
         })();
 

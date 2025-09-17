@@ -6,7 +6,7 @@ if (typeof imageFiles === 'undefined' || !Array.isArray(imageFiles) || imageFile
     throw new Error("imageFiles not loaded."); // Stop script execution
 }
 
-const selectedLambda = window.selectedLambda || window.defaultLambdaKey || '0.01';
+const selectedLambda = window.selectedLambda || window.defaultLambdaKey || '0.1';
 const feedbackStorageKey = `imageFeedback_${selectedLambda}`;
 const benchmarkStorageKey = `benchmarkEpisodeKeys_${selectedLambda}`;
 console.log(`Loading questionnaire for lambda=${selectedLambda}.`);

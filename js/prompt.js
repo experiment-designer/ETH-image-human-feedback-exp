@@ -10,7 +10,7 @@ const feedbackJsonInput = document.getElementById('feedback-json-input');
 const urlParams = new URLSearchParams(window.location.search);
 const urlLambda = urlParams.get('lam') || urlParams.get('lambda');
 const storedLambda = localStorage.getItem('currentLambda');
-const selectedLambda = urlLambda || storedLambda || '0.01';
+const selectedLambda = urlLambda || storedLambda || '0.1';
 const annotatorParamKeys = ['annotator', 'annotator_id', 'participant', 'user', 'uid'];
 let annotatorId = null;
 

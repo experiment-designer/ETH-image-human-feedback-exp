@@ -1205,7 +1205,7 @@ const imageFilesByLambda = {
         "images/lambda-0.1/alg-random_episode_049_timestep_06.png"
     ]
 };
-const defaultLambdaKey = "0.01";
+const defaultLambdaKey = "0.1";
 const urlParams = new URLSearchParams(window.location.search);
 let requestedLambdaParam = urlParams.get('lam') || urlParams.get('lambda') || defaultLambdaKey;
 if (!Object.prototype.hasOwnProperty.call(imageFilesByLambda, requestedLambdaParam)) {
