@@ -115,8 +115,6 @@ function buildOutputData(feedbackData, styleDescription, annotatorIdValue) {
     const formattedPreferences = [];
     const filenamePattern = /alg-([a-zA-Z0-9]+)_episode_(\d+)_timestep_(\d+)\.png$/i;
 
-    const recordedFilenames = new Set();
-
     for (const filename in feedbackData) {
         if (Object.prototype.hasOwnProperty.call(feedbackData, filename)) {
             const baseName = filename.split('/').pop();
@@ -132,31 +130,8 @@ function buildOutputData(feedbackData, styleDescription, annotatorIdValue) {
             } else {
                 formattedPreferences.push({ filename, preference: feedbackData[filename] });
             }
-            recordedFilenames.add(filename);
         }
     }
-
-    const skipImages = Array.isArray(window.skipImages) ? window.skipImages : [];
-    const lambdaFragment = `/lambda-${selectedLambda}/`;
-    skipImages.forEach(skipImage => {
-        if (!skipImage.includes(lambdaFragment) || recordedFilenames.has(skipImage)) {
-            return;
-        }
-        const baseName = skipImage.split('/').pop();
-        const match = baseName.match(filenamePattern);
-        if (match) {
-            formattedPreferences.push({
-                filename: skipImage,
-                algorithm: match[1],
-                episode: parseInt(match[2], 10),
-                timestep: parseInt(match[3], 10),
-                preference: -1
-            });
-        } else {
-            formattedPreferences.push({ filename: skipImage, preference: -1 });
-        }
-        recordedFilenames.add(skipImage);
-    });
 
     formattedPreferences.sort((a, b) => {
         if (a.algorithm !== b.algorithm) return String(a.algorithm).localeCompare(String(b.algorithm));
