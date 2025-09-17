@@ -1222,10 +1222,15 @@ if (!urlParams.has('lam') || urlParams.get('lam') !== requestedLambdaParam || ur
     const newUrl = `${window.location.pathname}?${urlParams.toString()}${window.location.hash}`;
     window.history.replaceState(null, '', newUrl);
 }
-const imageFiles = imageFilesByLambda[requestedLambdaParam] || [];
+const skipImagesSet = window.skipImagesSet || new Set(window.skipImages || []);
+const filteredImageFilesByLambda = {};
+for (const [lambdaKey, files] of Object.entries(imageFilesByLambda)) {
+    filteredImageFilesByLambda[lambdaKey] = files.filter(file => !skipImagesSet.has(file));
+}
+const imageFiles = filteredImageFilesByLambda[requestedLambdaParam] || [];
 const activeLambda = requestedLambdaParam;
 window.selectedLambda = activeLambda;
-window.imageFilesByLambda = imageFilesByLambda;
+window.imageFilesByLambda = filteredImageFilesByLambda;
 window.imageFiles = imageFiles;
 window.defaultLambdaKey = defaultLambdaKey;
 try {
